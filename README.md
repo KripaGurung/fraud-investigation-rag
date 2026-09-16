@@ -100,6 +100,54 @@ python --version
 uv --version
 ```
 
+### Package Manager
+
+This project uses **pnpm** as its Node.js package manager.
+
+The repository is configured with:
+
+```json
+"packageManager": "pnpm@11.25.0"
+```
+
+and uses:
+
+```text
+pnpm-lock.yaml
+pnpm-workspace.yaml
+```
+
+Use `pnpm` for installing dependencies and running Node.js workspace commands.
+
+Do not use:
+
+```bash
+npm install
+```
+
+for project dependency installation, because this repository is managed by pnpm.
+
+Node.js normally includes npm, so npm may be available on your machine. It is not required for the project's normal development workflow.
+
+If pnpm is not installed, you can enable it using Corepack:
+
+```bash
+corepack enable
+corepack prepare pnpm@11.25.0 --activate
+```
+
+Alternatively, pnpm can be installed through npm:
+
+```bash
+npm install -g pnpm@11.25.0
+```
+
+Verify pnpm after installation:
+
+```bash
+pnpm --version
+```
+
 > The system-wide Python version does not need to be Python 3.12. The backend uses `uv` to manage its Python environment independently.
 
 ---
