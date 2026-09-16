@@ -89,6 +89,7 @@ Ensure the following tools are installed before setting up the project:
 - **pnpm**: `v11.x` or later
 - **Python**: Python `3.12` is used by the backend
 - **uv**: Python package and environment manager
+- **Docker Desktop**: used to run PostgreSQL with pgvector locally
 
 Check the installed versions:
 
@@ -98,6 +99,8 @@ node --version
 pnpm --version
 python --version
 uv --version
+docker --version
+docker compose version
 ```
 
 ### Package Manager
@@ -149,6 +152,8 @@ pnpm --version
 ```
 
 > The system-wide Python version does not need to be Python 3.12. The backend uses `uv` to manage its Python environment independently.
+
+> Docker Desktop must be running before starting the PostgreSQL container.
 
 ---
 
@@ -212,7 +217,70 @@ If `uv` is already installed, this step can be skipped.
 
 ---
 
-### Step 4: Set Up the FastAPI Backend
+### Step 4: Configure Environment Variables
+
+The project uses environment variables for the local PostgreSQL configuration.
+
+From the repository root, create your local `.env` file from the provided example.
+
+#### Windows PowerShell
+
+```powershell
+Copy-Item .env.example .env
+```
+
+#### macOS / Linux
+
+```bash
+cp .env.example .env
+```
+
+The default local development configuration uses:
+
+```env
+POSTGRES_DB=fraud_rag
+POSTGRES_USER=fraud_rag
+POSTGRES_PASSWORD=fraud_rag
+DATABASE_URL=postgresql+psycopg://fraud_rag:fraud_rag@localhost:5433/fraud_rag
+```
+
+> `.env` is ignored by Git and should not be committed. `.env.example` provides the configuration template for local development.
+
+> PostgreSQL is exposed on host port `5433` to avoid conflicts with PostgreSQL installations already using the default port `5432`.
+
+---
+
+### Step 5: Start PostgreSQL with pgvector
+
+Make sure Docker Desktop is running.
+
+From the repository root, start the PostgreSQL container:
+
+```bash
+docker compose up -d postgres
+```
+
+The project uses the `pgvector/pgvector:pg17` image, which provides PostgreSQL 17 with pgvector support.
+
+Check that the container is running:
+
+```bash
+docker compose ps
+```
+
+The PostgreSQL data is stored in a Docker volume, so the database is preserved when the container is stopped or recreated.
+
+To stop the database:
+
+```bash
+docker compose down
+```
+
+> Do not use `docker compose down -v` unless you intentionally want to delete the local database volume and all stored database data.
+
+---
+
+### Step 6: Set Up the FastAPI Backend
 
 Move into the backend application:
 
@@ -244,7 +312,33 @@ It should report Python `3.12.x`.
 
 ---
 
-### Step 5: Run the FastAPI Backend
+### Step 7: Apply Database Migrations
+
+The project uses Alembic to manage database schema changes.
+
+Make sure the PostgreSQL container is running before applying migrations.
+
+From the `apps/api` directory, run:
+
+```bash
+uv run alembic upgrade head
+```
+
+This applies all available migrations to the local database, including enabling the PostgreSQL `vector` extension required by pgvector.
+
+Verify that the database is at the latest migration:
+
+```bash
+uv run alembic current
+```
+
+The output should show the current revision at `(head)`.
+
+> Run `uv run alembic upgrade head` whenever you pull new migrations from the repository.
+
+---
+
+### Step 8: Run the FastAPI Backend
 
 From the `apps/api` directory, start the FastAPI development server:
 
@@ -270,9 +364,50 @@ Stop the development server with:
 Ctrl + C
 ```
 
+#### Verify API and Database Health
+
+With the FastAPI server running, open another terminal and run:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+Or open the following URL in a browser:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+A successful response should indicate:
+
+```json
+{
+  "status": "healthy",
+  "database": "connected"
+}
+```
+
+This verifies that the FastAPI application can successfully connect to PostgreSQL.
+
 ---
 
-### Step 6: Run the Frontend
+### Step 9: Run Backend Tests
+
+Make sure the PostgreSQL container is running because the current health test connects to the database.
+
+From the `apps/api` directory, run:
+
+```bash
+uv run pytest
+```
+
+The test suite should complete successfully.
+
+> The current health test is an integration-style test and requires the local PostgreSQL container to be available.
+
+---
+
+### Step 10: Run the Frontend
 
 Open another terminal and navigate to the repository root.
 
@@ -337,7 +472,7 @@ FastAPI
 localhost:8000
 ```
 
-Database and RAG services will be introduced in later development phases.
+PostgreSQL with pgvector runs as a Docker service for local development. Additional RAG services will be introduced in later development phases.
 
 ---
 
@@ -355,6 +490,12 @@ Database and RAG services will be introduced in later development phases.
 | `uv add <package>`                     | `apps/api`      | Add a Python dependency                             |
 | `uv run python --version`              | `apps/api`      | Check the Python version used by the backend        |
 | `uv run uvicorn api.main:app --reload` | `apps/api`      | Start the FastAPI development server                |
+| `docker compose up -d postgres`        | Repository root | Start PostgreSQL with pgvector                      |
+| `docker compose ps`                    | Repository root | Check PostgreSQL container status                   |
+| `docker compose down`                  | Repository root | Stop the local Docker services                      |
+| `uv run alembic upgrade head`          | `apps/api`      | Apply all pending database migrations               |
+| `uv run alembic current`               | `apps/api`      | Show the current database migration revision        |
+| `uv run pytest`                        | `apps/api`      | Run backend tests                                   |
 
 ---
 
@@ -400,8 +541,8 @@ The project will be developed incrementally so that each stage introduces a new 
 - [ ] Design transaction schema
 - [ ] Design fraud alert schema
 - [ ] Generate synthetic banking data
-- [ ] Add PostgreSQL
-- [ ] Add database migrations
+- [x] Add PostgreSQL
+- [x] Add database migrations
 - [ ] Implement transaction retrieval
 
 ### Phase 3 — Basic RAG
@@ -411,7 +552,7 @@ The project will be developed incrementally so that each stage introduces a new 
 - [ ] Implement document ingestion
 - [ ] Implement document chunking
 - [ ] Generate embeddings
-- [ ] Add pgvector
+- [x] Add pgvector
 - [ ] Implement semantic retrieval
 - [ ] Add source citations
 
