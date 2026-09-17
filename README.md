@@ -22,21 +22,40 @@ fraud-investigation-rag/
 │   │   └── tsconfig.json               # TypeScript configuration
 │   │
 │   └── api/                            # Fraud Investigation API (FastAPI)
+│       ├── migrations/                 # Alembic database migrations
+│       │   ├── versions/               # Migration revision files
+│       │   ├── env.py                  # Alembic migration environment
+│       │   └── script.py.mako          # Migration template
+│       │
 │       ├── src/
 │       │   └── api/
+│       │       ├── core/
+│       │       │   └── config.py       # Application and environment settings
+│       │       ├── db/
+│       │       │   ├── base.py         # SQLAlchemy declarative base
+│       │       │   └── session.py      # Database engine and session management
+│       │       ├── schemas/
+│       │       │   ├── evidence.py     # Shared evidence contracts
+│       │       │   └── investigation.py # Investigation result contracts
 │       │       ├── __init__.py
-│       │       └── main.py             # FastAPI application entry point
+│       │       └── main.py             # FastAPI application and health endpoint
+│       │
+│       ├── tests/
+│       │   └── test_health.py          # API/database health integration test
 │       ├── .python-version             # Python version used by uv
-│       ├── pyproject.toml              # Python project and dependencies
-│       └── uv.lock                     # Locked Python dependencies
+│       ├── alembic.ini                 # Alembic configuration
+│       ├── pyproject.toml               # Python dependencies and project config
+│       └── uv.lock                      # Locked Python dependencies
 │
 ├── packages/
 │   ├── ui/                             # Shared React UI components
 │   ├── eslint-config/                  # Shared ESLint configuration
 │   └── typescript-config/              # Shared TypeScript configuration
 │
+├── .env.example                        # Local environment variable template
 ├── .gitignore
 ├── .npmrc
+├── compose.yaml                        # PostgreSQL + pgvector Docker service
 ├── package.json                        # Root monorepo scripts
 ├── pnpm-lock.yaml                      # Locked Node.js dependencies
 ├── pnpm-workspace.yaml                 # pnpm workspace configuration
@@ -44,7 +63,7 @@ fraud-investigation-rag/
 └── README.md
 ```
 
-As the project develops, additional directories will be introduced for database infrastructure, synthetic financial data, document ingestion, retrieval pipelines, evaluation, and deployment.
+As the project develops, additional directories will be introduced for synthetic financial data, document ingestion, retrieval and reranking pipelines, investigation logic, evaluation, and deployment.
 
 ---
 
