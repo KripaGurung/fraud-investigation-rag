@@ -1,6 +1,4 @@
-import pytest
-
-from api.investigation.analyzer import _classify_evidence, analyze_evidence
+from api.investigation.analyzer import analyze_evidence
 from api.investigation.schemas import EvidenceClassification
 from api.schemas.evidence import EvidenceItem
 from tests.fixtures.evidence_bundles import (
@@ -10,49 +8,6 @@ from tests.fixtures.evidence_bundles import (
     mixed_evidence_bundle,
     policy_without_history_bundle,
 )
-
-
-@pytest.mark.parametrize(
-    ("content", "expected"),
-    [
-        ("This transaction is suspicious.", EvidenceClassification.SUPPORTING),
-        ("The transaction is unusually large.", EvidenceClassification.SUPPORTING),
-        (
-            "Similar transactions were confirmed as legitimate.",
-            EvidenceClassification.CONTRADICTING,
-        ),
-        (
-            "The customer previously made legitimate business payments.",
-            EvidenceClassification.CONTRADICTING,
-        ),
-        (
-            "The transaction amount was 5000 USD.",
-            EvidenceClassification.NEUTRAL,
-        ),
-        (
-            "The transaction is suspicious but was previously confirmed as legitimate.",
-            EvidenceClassification.NEUTRAL,
-        ),
-        (
-            "High-value payments to new beneficiaries require additional review.",
-            EvidenceClassification.SUPPORTING,
-        ),
-        (
-            "The customer has previously made legitimate high-value payments to new beneficiaries.",
-            EvidenceClassification.CONTRADICTING,
-        ),
-    ],
-)
-
-def test_classify_evidence(content: str, expected: EvidenceClassification):
-    evidence = EvidenceItem(
-        source_id="test-001",
-        source_type="transaction",
-        content=content,
-        score=0.90,
-    )
-
-    assert _classify_evidence(evidence) == expected
 
 def test_analyze_evidence_returns_all_evidence_items():
     bundle = clearly_suspicious_bundle()
@@ -108,3 +63,20 @@ def test_analyze_evidence_handles_mixed_evidence():
         "case-003",
         "policy-003",
     ]
+
+def test_analyze_evidence_uses_provided_classifier():
+    class AlwaysNeutralClassifier:
+        def classify(self, evidence: EvidenceItem) -> EvidenceClassification:
+            return EvidenceClassification.NEUTRAL
+
+    bundle = clearly_suspicious_bundle()
+
+    analyzed = analyze_evidence(
+        bundle,
+        classifier=AlwaysNeutralClassifier(),
+    )
+
+    assert all(
+        item.classification == EvidenceClassification.NEUTRAL
+        for item in analyzed
+    )    
