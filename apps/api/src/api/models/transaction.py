@@ -9,6 +9,7 @@ from api.db.base import Base
 
 if TYPE_CHECKING:
     from api.models.account import Account
+    from api.models.fraud_alert import FraudAlert
 
 
 class Transaction(Base):
@@ -81,7 +82,9 @@ class Transaction(Base):
         server_default=func.now(),
         nullable=False,
     )
-
     account: Mapped["Account"] = relationship(
         back_populates="transactions",
+    )
+    fraud_alerts: Mapped[list["FraudAlert"]] = relationship(
+        back_populates="transaction",
     )
