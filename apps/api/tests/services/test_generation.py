@@ -44,7 +44,7 @@ def test_generate_investigation_orchestrates_existing_pipeline(
     result = generate_investigation(
         db,
         "ALERT-001",
-        generator,
+        lambda: generator,
     )
 
     assert result is not None
@@ -68,7 +68,7 @@ def test_generate_investigation_returns_none_for_unknown_alert(
     result = generate_investigation(
         db,
         "ALERT-DOES-NOT-EXIST",
-        generator,
+        lambda: generator,
     )
 
     assert result is None

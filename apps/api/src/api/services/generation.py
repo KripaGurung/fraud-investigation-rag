@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from sqlalchemy.orm import Session
 
 from api.investigation.context import (
@@ -12,7 +14,7 @@ from api.services.investigation import build_investigation_context
 def generate_investigation(
     db: Session,
     alert_reference: str,
-    generator: InvestigationGenerator,
+    generator_factory: Callable[[], InvestigationGenerator],
 ) -> InvestigationCase | None:
     """Build evidence context and generate an investigator-ready case."""
     investigation_context = build_investigation_context(
@@ -28,6 +30,8 @@ def generate_investigation(
     intelligence_context = build_intelligence_context(
         evidence_bundle,
     )
+
+    generator = generator_factory()
 
     return generator.generate(
         alert_reference,
