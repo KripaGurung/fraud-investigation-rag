@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from api.models import KnowledgeChunk, KnowledgeDocument
 from api.rag.corpus.schema import CorpusDocument
 from api.rag.ingestion.chunking import chunk_text
+from api.rag.ingestion.embeddings import generate_embedding
 
 
 def ingest_document(
@@ -33,10 +34,13 @@ def ingest_document(
     text_chunks = chunk_text(document.content)
 
     for text_chunk in text_chunks:
+        embedding = generate_embedding(text_chunk.content)
+
         knowledge_chunk = KnowledgeChunk(
             document=knowledge_document,
             chunk_index=text_chunk.chunk_index,
             content=text_chunk.content,
+            embedding=embedding,
         )
 
         db.add(knowledge_chunk)
