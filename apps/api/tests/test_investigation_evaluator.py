@@ -4,9 +4,23 @@ from api.investigation.generation.schemas import (
     InvestigationCase,
     InvestigationFinding,
 )
+from api.investigation.evaluation.semantic_groundedness import (
+    SemanticGroundednessResult,
+)
 from tests.fixtures.evidence_bundles import clearly_suspicious_bundle
 
 
+class FakeSemanticEvaluator:
+    def evaluate(
+        self,
+        statement: str,
+        evidence_contents: list[str],
+    ) -> SemanticGroundednessResult:
+        return SemanticGroundednessResult(
+            is_supported=True,
+            explanation="The cited evidence supports the finding.",
+        )
+    
 def test_evaluate_investigation_combines_evaluation_results():
     bundle = clearly_suspicious_bundle()
     context = build_investigation_context(bundle)
@@ -34,6 +48,7 @@ def test_evaluate_investigation_combines_evaluation_results():
     assert result.groundedness.total_findings == 1
     assert result.groundedness.grounded_findings == 1
     assert result.groundedness.ungrounded_findings == []
+    assert result.semantic_groundedness is None
 
 def test_evaluate_investigation_preserves_evaluation_failures():
     bundle = clearly_suspicious_bundle()
@@ -64,4 +79,36 @@ def test_evaluate_investigation_preserves_evaluation_failures():
     assert result.groundedness.grounded_findings == 0
     assert result.groundedness.ungrounded_findings == [
         "Finding based on unavailable evidence."
-    ]    
+    ]  
+
+def test_evaluate_investigation_includes_semantic_groundedness_when_enabled():
+    bundle = clearly_suspicious_bundle()
+    context = build_investigation_context(bundle)
+
+    evidence_id = context.analyzed_evidence[0].evidence.source_id
+
+    case = InvestigationCase(
+        alert_id=bundle.alert_id,
+        executive_summary="Suspicious transaction activity requires review.",
+        risk_narrative="The transaction differs from observed activity.",
+        supporting_findings=[
+            InvestigationFinding(
+                statement="Suspicious activity requires investigation.",
+                evidence_ids=[evidence_id],
+            )
+        ],
+    )
+
+    result = evaluate_investigation(
+        case,
+        context,
+        semantic_evaluator=FakeSemanticEvaluator(),
+    )
+
+    assert result.semantic_groundedness is not None
+    assert len(result.semantic_groundedness) == 1
+    assert result.semantic_groundedness[0].statement == (
+        "Suspicious activity requires investigation."
+    )
+    assert result.semantic_groundedness[0].evidence_ids == [evidence_id]
+    assert result.semantic_groundedness[0].result.is_supported is True      
