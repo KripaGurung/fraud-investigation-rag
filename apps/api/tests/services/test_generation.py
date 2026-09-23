@@ -1,3 +1,5 @@
+import pytest
+
 from sqlalchemy.orm import Session
 
 from api.investigation.context import InvestigationContext
@@ -74,3 +76,69 @@ def test_generate_investigation_returns_none_for_unknown_alert(
     assert result is None
     assert generator.received_alert_id is None
     assert generator.received_context is None
+
+def test_generate_investigation_rejects_invalid_evidence_citations(
+    db: Session,
+) -> None:
+    class InvalidCitationGenerator:
+        def generate(
+            self,
+            alert_id,
+            context,
+        ) -> InvestigationCase:
+            return InvestigationCase(
+                alert_id=alert_id,
+                executive_summary="Generated summary.",
+                risk_narrative="Generated risk narrative.",
+                supporting_findings=[
+                    InvestigationFinding(
+                        statement="Unsupported generated finding.",
+                        evidence_ids=["FAKE-999"],
+                    )
+                ],
+            )
+
+    generator = InvalidCitationGenerator()
+
+    with pytest.raises(
+        ValueError,
+        match="invalid evidence citations: FAKE-999",
+    ):
+        generate_investigation(
+            db,
+            "ALERT-001",
+            lambda: generator,
+        ) 
+
+def test_generate_investigation_rejects_uncited_findings(
+    db: Session,
+) -> None:
+    class UncitedFindingGenerator:
+        def generate(
+            self,
+            alert_id,
+            context,
+        ) -> InvestigationCase:
+            return InvestigationCase(
+                alert_id=alert_id,
+                executive_summary="Generated summary.",
+                risk_narrative="Generated risk narrative.",
+                supporting_findings=[
+                    InvestigationFinding(
+                        statement="Finding without supporting provenance.",
+                        evidence_ids=[],
+                    )
+                ],
+            )
+
+    generator = UncitedFindingGenerator()
+
+    with pytest.raises(
+        ValueError,
+        match="uncited findings",
+    ):
+        generate_investigation(
+            db,
+            "ALERT-001",
+            lambda: generator,
+        )           

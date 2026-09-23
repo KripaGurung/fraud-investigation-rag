@@ -9,6 +9,9 @@ from api.investigation.generation.generator import InvestigationGenerator
 from api.investigation.generation.schemas import InvestigationCase
 from api.services.evidence import build_evidence_bundle
 from api.services.investigation import build_investigation_context
+from api.investigation.generation.provenance import (
+    validate_case_provenance,
+)
 
 
 def generate_investigation(
@@ -33,7 +36,26 @@ def generate_investigation(
 
     generator = generator_factory()
 
-    return generator.generate(
-        alert_reference,
+    case = generator.generate(
+       alert_reference,
+       intelligence_context,
+    )
+
+    validation = validate_case_provenance(
+        case,
         intelligence_context,
     )
+
+    if validation.invalid_evidence_ids:
+        raise ValueError(
+            "Generated investigation contains invalid evidence citations: "
+            + ", ".join(validation.invalid_evidence_ids)
+        )
+
+    if validation.uncited_findings:
+        raise ValueError(
+            "Generated investigation contains uncited findings: "
+            + "; ".join(validation.uncited_findings)
+        )
+
+    return case
