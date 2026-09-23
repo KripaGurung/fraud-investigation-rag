@@ -194,4 +194,26 @@ def test_evaluate_case_aggregates_unsupported_findings():
     assert result.unsupported_findings[0].statement == "Unsupported finding."
     assert result.unsupported_findings[0].result.is_supported is False
 
-    assert len(result.finding_evaluations) == 2    
+    assert len(result.finding_evaluations) == 2  
+
+def test_evaluate_case_with_no_findings_has_perfect_groundedness_score():
+    bundle = clearly_suspicious_bundle()
+    context = build_investigation_context(bundle)
+
+    case = InvestigationCase(
+        alert_id=bundle.alert_id,
+        executive_summary="Test summary.",
+        risk_narrative="Test risk narrative.",
+    )
+
+    result = evaluate_case_semantic_groundedness(
+        case,
+        context,
+        StatementBasedSemanticEvaluator(),
+    )
+
+    assert result.score == 1.0
+    assert result.total_findings == 0
+    assert result.supported_findings == 0
+    assert result.unsupported_findings == []
+    assert result.finding_evaluations == []      
