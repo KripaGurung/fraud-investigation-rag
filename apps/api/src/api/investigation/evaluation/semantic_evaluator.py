@@ -16,6 +16,18 @@ class FindingSemanticEvaluation:
     evidence_ids: list[str]
     result: SemanticGroundednessResult
 
+
+@dataclass(frozen=True)
+class CaseSemanticGroundednessResult:
+    """Aggregate semantic grounding result for an investigation case."""
+
+    score: float
+    total_findings: int
+    supported_findings: int
+    unsupported_findings: list[FindingSemanticEvaluation]
+    finding_evaluations: list[FindingSemanticEvaluation]
+
+
 def _build_evidence_content_map(
     context: InvestigationContext,
 ) -> dict[str, str]:
@@ -24,6 +36,7 @@ def _build_evidence_content_map(
         analyzed.evidence.source_id: analyzed.evidence.content
         for analyzed in context.analyzed_evidence
     }
+
 
 def evaluate_finding_semantic_groundedness(
     statement: str,
@@ -49,11 +62,12 @@ def evaluate_finding_semantic_groundedness(
         result=result,
     )
 
+
 def evaluate_case_semantic_groundedness(
     case: InvestigationCase,
     context: InvestigationContext,
     evaluator: SemanticGroundednessEvaluator,
-) -> list[FindingSemanticEvaluation]:
+) -> CaseSemanticGroundednessResult:
     """Evaluate semantic grounding for all findings in an investigation case."""
     evidence_content_map = _build_evidence_content_map(context)
 
@@ -62,7 +76,7 @@ def evaluate_case_semantic_groundedness(
         + case.contradicting_findings
     )
 
-    return [
+    finding_evaluations = [
         evaluate_finding_semantic_groundedness(
             statement=finding.statement,
             evidence_ids=finding.evidence_ids,
@@ -71,3 +85,26 @@ def evaluate_case_semantic_groundedness(
         )
         for finding in findings
     ]
+
+    unsupported_findings = [
+        evaluation
+        for evaluation in finding_evaluations
+        if not evaluation.result.is_supported
+    ]
+
+    total_findings = len(finding_evaluations)
+    supported_findings = total_findings - len(unsupported_findings)
+
+    score = (
+        supported_findings / total_findings
+        if total_findings
+        else 1.0
+    )
+
+    return CaseSemanticGroundednessResult(
+        score=score,
+        total_findings=total_findings,
+        supported_findings=supported_findings,
+        unsupported_findings=unsupported_findings,
+        finding_evaluations=finding_evaluations,
+    )

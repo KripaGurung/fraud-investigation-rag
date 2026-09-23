@@ -30,6 +30,23 @@ class FakeSemanticEvaluator:
         self.received_evidence_contents = evidence_contents
         return self.result
 
+class StatementBasedSemanticEvaluator:
+    def evaluate(
+        self,
+        statement: str,
+        evidence_contents: list[str],
+    ) -> SemanticGroundednessResult:
+        is_supported = statement != "Unsupported finding."
+
+        return SemanticGroundednessResult(
+            is_supported=is_supported,
+            explanation=(
+                "The evidence supports the finding."
+                if is_supported
+                else "The evidence does not support the finding."
+            ),
+        )    
+
 def test_evaluate_finding_resolves_cited_evidence_content():
     expected_result = SemanticGroundednessResult(
         is_supported=True,
@@ -117,18 +134,64 @@ def test_evaluate_case_evaluates_all_findings():
         ],
     )
 
-    results = evaluate_case_semantic_groundedness(
+    result = evaluate_case_semantic_groundedness(
         case,
         context,
         evaluator,
     )
 
-    assert len(results) == 2
+    assert result.score == 1.0
+    assert result.total_findings == 2
+    assert result.supported_findings == 2
+    assert result.unsupported_findings == []
 
-    assert results[0].statement == "Supporting finding."
-    assert results[0].evidence_ids == [evidence_ids[0]]
-    assert results[0].result.is_supported is True
+    assert len(result.finding_evaluations) == 2
 
-    assert results[1].statement == "Contradicting finding."
-    assert results[1].evidence_ids == [evidence_ids[1]]
-    assert results[1].result.is_supported is True    
+    assert result.finding_evaluations[0].statement == "Supporting finding."
+    assert result.finding_evaluations[0].evidence_ids == [evidence_ids[0]]
+    assert result.finding_evaluations[0].result.is_supported is True
+
+    assert result.finding_evaluations[1].statement == "Contradicting finding."
+    assert result.finding_evaluations[1].evidence_ids == [evidence_ids[1]]
+    assert result.finding_evaluations[1].result.is_supported is True
+
+def test_evaluate_case_aggregates_unsupported_findings():
+    bundle = clearly_suspicious_bundle()
+    context = build_investigation_context(bundle)
+
+    evidence_ids = [
+        analyzed.evidence.source_id
+        for analyzed in context.analyzed_evidence[:2]
+    ]
+
+    case = InvestigationCase(
+        alert_id=bundle.alert_id,
+        executive_summary="Test summary.",
+        risk_narrative="Test risk narrative.",
+        supporting_findings=[
+            InvestigationFinding(
+                statement="Supported finding.",
+                evidence_ids=[evidence_ids[0]],
+            ),
+            InvestigationFinding(
+                statement="Unsupported finding.",
+                evidence_ids=[evidence_ids[1]],
+            ),
+        ],
+    )
+
+    result = evaluate_case_semantic_groundedness(
+        case,
+        context,
+        StatementBasedSemanticEvaluator(),
+    )
+
+    assert result.score == 0.5
+    assert result.total_findings == 2
+    assert result.supported_findings == 1
+
+    assert len(result.unsupported_findings) == 1
+    assert result.unsupported_findings[0].statement == "Unsupported finding."
+    assert result.unsupported_findings[0].result.is_supported is False
+
+    assert len(result.finding_evaluations) == 2    

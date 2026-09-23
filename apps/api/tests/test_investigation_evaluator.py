@@ -106,9 +106,17 @@ def test_evaluate_investigation_includes_semantic_groundedness_when_enabled():
     )
 
     assert result.semantic_groundedness is not None
-    assert len(result.semantic_groundedness) == 1
-    assert result.semantic_groundedness[0].statement == (
+    assert result.semantic_groundedness.score == 1.0
+    assert result.semantic_groundedness.total_findings == 1
+    assert result.semantic_groundedness.supported_findings == 1
+    assert result.semantic_groundedness.unsupported_findings == []
+
+    assert len(result.semantic_groundedness.finding_evaluations) == 1
+
+    finding_evaluation = result.semantic_groundedness.finding_evaluations[0]
+
+    assert finding_evaluation.statement == (
         "Suspicious activity requires investigation."
     )
-    assert result.semantic_groundedness[0].evidence_ids == [evidence_id]
-    assert result.semantic_groundedness[0].result.is_supported is True      
+    assert finding_evaluation.evidence_ids == [evidence_id]
+    assert finding_evaluation.result.is_supported is True

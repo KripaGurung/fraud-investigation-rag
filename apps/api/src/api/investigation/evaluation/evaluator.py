@@ -10,7 +10,7 @@ from api.investigation.evaluation.groundedness import (
     evaluate_groundedness,
 )
 from api.investigation.evaluation.semantic_evaluator import (
-    FindingSemanticEvaluation,
+    CaseSemanticGroundednessResult,
     evaluate_case_semantic_groundedness,
 )
 from api.investigation.evaluation.semantic_groundedness import (
@@ -25,7 +25,7 @@ class InvestigationEvaluationResult:
 
     completeness: ReportCompletenessResult
     groundedness: GroundednessResult
-    semantic_groundedness: list[FindingSemanticEvaluation] | None = None
+    semantic_groundedness: CaseSemanticGroundednessResult | None = None
 
 def evaluate_investigation(
     case: InvestigationCase,
