@@ -46,11 +46,17 @@ def generate_investigation_case(
     ] = Depends(get_investigation_generator_factory),
 ) -> InvestigationCase:
     """Generate an investigator-ready case for a fraud alert."""
-    result = generate_investigation(
-        db,
-        alert_reference,
-        generator_factory,
-    )
+    try:
+        result = generate_investigation(
+            db,
+            alert_reference,
+            generator_factory,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from exc
 
     if result is None:
         raise HTTPException(
