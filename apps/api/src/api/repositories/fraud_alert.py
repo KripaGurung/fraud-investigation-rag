@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from api.models import FraudAlert, Transaction
+from api.models import Account, FraudAlert, Transaction
 
 
 def get_fraud_alert(
@@ -11,7 +11,9 @@ def get_fraud_alert(
     statement = (
         select(FraudAlert)
         .options(
-            joinedload(FraudAlert.transaction),
+            joinedload(FraudAlert.transaction)
+            .joinedload(Transaction.account)
+            .joinedload(Account.customer),
         )
         .where(FraudAlert.alert_reference == alert_reference)
     )
