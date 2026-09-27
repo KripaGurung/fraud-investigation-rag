@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -6,9 +8,13 @@ from api.investigation.generation.openai_generator import (
     OpenAIInvestigationGenerator,
 )
 from api.investigation.generation.schemas import InvestigationCase
+from api.schemas.investigation_evidence import (
+    InvestigationEvidenceResponse,
+)
 from api.services.generation import generate_investigation
-
-from collections.abc import Callable
+from api.services.investigation_evidence import (
+    get_investigation_evidence,
+)
 
 
 router = APIRouter(
@@ -57,6 +63,29 @@ def generate_investigation_case(
             status_code=502,
             detail=str(exc),
         ) from exc
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Fraud alert '{alert_reference}' was not found.",
+        )
+
+    return result
+
+
+@router.get(
+    "/{alert_reference}/evidence",
+    response_model=InvestigationEvidenceResponse,
+)
+def get_investigation_evidence_route(
+    alert_reference: str,
+    db: Session = Depends(get_db),
+) -> InvestigationEvidenceResponse:
+    """Return analyzed evidence for a fraud investigation."""
+    result = get_investigation_evidence(
+        db,
+        alert_reference,
+    )
 
     if result is None:
         raise HTTPException(

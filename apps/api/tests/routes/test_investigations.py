@@ -55,6 +55,24 @@ def create_test_app(db: Session) -> FastAPI:
     return app
 
 
+def test_get_investigation_evidence_route_returns_evidence(
+    db: Session,
+) -> None:
+    app = create_test_app(db)
+
+    response = TestClient(app).get(
+        "/investigations/ALERT-001/evidence",
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["alert_id"] == "ALERT-001"
+    assert len(body["analyzed_evidence"]) > 0
+    assert body["missing_evidence"] == ["policy_evidence"]
+
+
 def test_generate_investigation_route_returns_case(db: Session) -> None:
     app = create_test_app(db)
 
@@ -103,4 +121,18 @@ def test_generate_investigation_route_returns_502_for_invalid_citations(
     assert response.json()["detail"] == (
         "Generated investigation contains invalid evidence citations: "
         "FAKE-999"
+    )    
+
+def test_get_investigation_evidence_route_returns_404_for_unknown_alert(
+    db: Session,
+) -> None:
+    app = create_test_app(db)
+
+    response = TestClient(app).get(
+        "/investigations/ALERT-DOES-NOT-EXIST/evidence",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "Fraud alert 'ALERT-DOES-NOT-EXIST' was not found."
     )    
