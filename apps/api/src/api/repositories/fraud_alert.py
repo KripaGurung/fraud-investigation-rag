@@ -18,6 +18,14 @@ def get_fraud_alert(
 
     return db.scalar(statement)
 
+def list_fraud_alerts(
+    db: Session,
+) -> list[FraudAlert]:
+    """Return available fraud alerts."""
+    statement = select(FraudAlert)
+
+    return list(db.scalars(statement).all())
+
 
 def get_customer_transaction_history(
     db: Session,
