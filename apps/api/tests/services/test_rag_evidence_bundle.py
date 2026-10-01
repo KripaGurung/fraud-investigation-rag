@@ -76,7 +76,8 @@ def test_evidence_bundle_includes_rag_historical_and_policy_evidence(
 
     assert historical_evidence.source_id == "CASE-001"
     assert historical_evidence.source_type == "historical_fraud_case"
-    assert historical_evidence.score == historical_result.score
+    assert historical_evidence.score == historical_evidence.metadata["rerank_score"]
+    assert historical_evidence.metadata["hybrid_score"] == historical_result.score
     assert historical_evidence.metadata["chunk_id"] == 101
     assert historical_evidence.metadata["semantic_score"] == 0.90
     assert historical_evidence.metadata["keyword_score"] == 0.80
@@ -85,7 +86,8 @@ def test_evidence_bundle_includes_rag_historical_and_policy_evidence(
 
     assert policy_evidence.source_id == "POLICY-AML-001"
     assert policy_evidence.source_type == "aml_policy"
-    assert policy_evidence.score == policy_result.score
+    assert policy_evidence.score == policy_evidence.metadata["rerank_score"]
+    assert policy_evidence.metadata["hybrid_score"] == policy_result.score
     assert policy_evidence.metadata["chunk_id"] == 201
 
 

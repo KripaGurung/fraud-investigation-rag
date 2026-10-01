@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from api.rag.retrieval.hybrid import hybrid_search
+from api.rag.retrieval.reranker import rerank_results
 from api.schemas.evidence import EvidenceBundle, EvidenceItem
 from api.services.investigation import InvestigationContext
 from api.services.rag_evidence import retrieval_result_to_evidence
@@ -71,18 +72,30 @@ def build_evidence_bundle(
         f"Alert reason: {alert.reason}."
     )
 
-    historical_case_results = hybrid_search(
+    historical_case_candidates = hybrid_search(
         db=db,
         query=retrieval_query,
-        limit=5,
+        limit=10,
         document_type="historical_fraud_case",
     )
 
-    policy_results = hybrid_search(
+    policy_candidates = hybrid_search(
         db=db,
         query=retrieval_query,
-        limit=5,
+        limit=10,
         document_type="aml_policy",
+    )
+
+    historical_case_results = rerank_results(
+        query=retrieval_query,
+        results=historical_case_candidates,
+        limit=5,
+    )
+
+    policy_results = rerank_results(
+        query=retrieval_query,
+        results=policy_candidates,
+        limit=5,
     )
 
     historical_case_evidence = [
