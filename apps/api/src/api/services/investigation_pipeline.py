@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from api.investigation.context import (
     build_investigation_context as build_analysis_context,
 )
-from api.investigation.generation.generator import DeterministicReportGenerator
+from api.investigation.generation.generator import (
+    DeterministicReportGenerator,
+    InvestigationReportGenerator,
+)
 from api.investigation.generation.prompt import (
     SYSTEM_PROMPT,
     build_investigation_prompt,
@@ -17,6 +20,7 @@ from api.services.investigation import build_investigation_context
 def run_investigation(
     db: Session,
     alert_reference: str,
+    report_generator: InvestigationReportGenerator | None = None,
 ) -> InvestigationResult | None:
     investigation_context = build_investigation_context(
         db,
@@ -57,9 +61,9 @@ def run_investigation(
         analysis_context,
     )
 
-    report_generator = DeterministicReportGenerator()
+    generator = report_generator or DeterministicReportGenerator()
 
-    report = report_generator.generate(
+    report = generator.generate(
         SYSTEM_PROMPT,
         investigation_prompt,
     )

@@ -125,3 +125,24 @@ def test_run_investigation_generates_report(
     assert result is not None
     assert result.report
     assert isinstance(result.report, str)
+    
+    
+def test_run_investigation_uses_provided_report_generator(
+    db: Session,
+) -> None:
+    class FakeReportGenerator:
+        def generate(
+            self,
+            system_prompt: str,
+            investigation_prompt: str,
+        ) -> str:
+            return "LLM-generated investigation report."
+
+    result = run_investigation(
+        db,
+        "ALERT-001",
+        report_generator=FakeReportGenerator(),
+    )
+
+    assert result is not None
+    assert result.report == "LLM-generated investigation report."
