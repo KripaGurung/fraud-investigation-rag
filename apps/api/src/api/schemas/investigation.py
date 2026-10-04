@@ -9,3 +9,4 @@ class InvestigationResult(BaseModel):
     contradicting_evidence: list[EvidenceItem] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
     summary: str
+    report: str
