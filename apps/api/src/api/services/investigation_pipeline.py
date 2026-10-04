@@ -1,12 +1,17 @@
 from sqlalchemy.orm import Session
 
-from api.schemas.investigation import InvestigationResult
-from api.services.evidence import build_evidence_bundle
-from api.services.investigation import build_investigation_context
 from api.investigation.context import (
     build_investigation_context as build_analysis_context,
 )
+from api.investigation.generation.generator import DeterministicReportGenerator
+from api.investigation.generation.prompt import (
+    SYSTEM_PROMPT,
+    build_investigation_prompt,
+)
 from api.investigation.schemas import EvidenceClassification
+from api.schemas.investigation import InvestigationResult
+from api.services.evidence import build_evidence_bundle
+from api.services.investigation import build_investigation_context
 
 
 def run_investigation(
@@ -48,12 +53,24 @@ def run_investigation(
         missing_evidence=analysis_context.missing_evidence,
     )
 
+    investigation_prompt = build_investigation_prompt(
+        analysis_context,
+    )
+
+    report_generator = DeterministicReportGenerator()
+
+    report = report_generator.generate(
+        SYSTEM_PROMPT,
+        investigation_prompt,
+    )
+
     return InvestigationResult(
         alert_id=evidence_bundle.alert_id,
         supporting_evidence=supporting_evidence,
         contradicting_evidence=contradicting_evidence,
         missing_evidence=analysis_context.missing_evidence,
         summary=summary,
+        report=report,
     )
 
 

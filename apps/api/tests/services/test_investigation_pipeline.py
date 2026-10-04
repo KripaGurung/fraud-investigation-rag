@@ -112,3 +112,16 @@ def test_run_investigation_returns_none_for_unknown_alert(
     )
 
     assert result is None
+
+
+def test_run_investigation_generates_report(
+    db: Session,
+) -> None:
+    result = run_investigation(
+        db,
+        "ALERT-001",
+    )
+
+    assert result is not None
+    assert result.report
+    assert isinstance(result.report, str)
