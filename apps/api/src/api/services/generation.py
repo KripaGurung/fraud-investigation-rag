@@ -28,7 +28,10 @@ def generate_investigation(
     if investigation_context is None:
         return None
 
-    evidence_bundle = build_evidence_bundle(investigation_context)
+    evidence_bundle = build_evidence_bundle(
+        db,
+        investigation_context,
+    )
 
     intelligence_context = build_intelligence_context(
         evidence_bundle,

@@ -2,9 +2,7 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 ROOT_DIR = Path(__file__).resolve().parents[5]
-
 
 class Settings(BaseSettings):
     app_name: str = "Financial Fraud Investigation RAG"
@@ -12,6 +10,8 @@ class Settings(BaseSettings):
     database_url: str
     openai_api_key: str | None = None
     openai_model: str = "gpt-5.6"
+    gemini_api_key: str
+    gemini_model: str = "gemini-2.5-flash"
 
     model_config = SettingsConfigDict(
         env_file=ROOT_DIR / ".env",

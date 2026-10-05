@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from api.models import KnowledgeChunk, KnowledgeDocument
 from api.rag.corpus.schema import CorpusDocument
+from api.rag.ingestion.embeddings import EMBEDDING_DIMENSION
 from api.rag.ingestion.pipeline import ingest_document
 
 
@@ -50,7 +51,13 @@ def test_ingest_document_creates_document_and_chunks(
     )
 
     assert len(stored_chunks) == 1
-    assert stored_chunks[0].chunk_index == 0
-    assert stored_chunks[0].content == document.content
+
+    stored_chunk = stored_chunks[0]
+
+    assert stored_chunk.chunk_index == 0
+    assert stored_chunk.content == document.content
+
+    assert stored_chunk.embedding is not None
+    assert len(stored_chunk.embedding) == EMBEDDING_DIMENSION
 
     db.rollback()

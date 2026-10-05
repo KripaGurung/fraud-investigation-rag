@@ -21,6 +21,7 @@ def root():
 @app.get("/health")
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
+
     return {
         "status": "healthy",
         "database": "connected",

@@ -3,7 +3,7 @@ from openai import OpenAI
 from api.core.config import settings
 from api.investigation.context import InvestigationContext
 from api.investigation.generation.generator import InvestigationGenerator
-from api.investigation.generation.prompt import build_investigation_prompt
+from api.investigation.generation.prompt import build_structured_case_prompt
 from api.investigation.generation.schemas import InvestigationCase
 
 
@@ -31,7 +31,7 @@ class OpenAIInvestigationGenerator(InvestigationGenerator):
         alert_id: str,
         context: InvestigationContext,
     ) -> InvestigationCase:
-        prompt = build_investigation_prompt(
+        prompt = build_structured_case_prompt(
             alert_id,
             context,
         )

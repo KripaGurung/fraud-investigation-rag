@@ -25,7 +25,10 @@ def get_investigation_evidence(
     if database_context is None:
         return None
 
-    evidence_bundle = build_evidence_bundle(database_context)
+    evidence_bundle = build_evidence_bundle(
+        db,
+        database_context,
+    )
     analysis_context = build_analysis_context(evidence_bundle)
 
     return InvestigationEvidenceResponse(

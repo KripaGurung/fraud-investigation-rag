@@ -16,7 +16,7 @@ def test_get_investigation_evidence_returns_analyzed_evidence(
     assert result is not None
     assert result.alert_id == "ALERT-001"
     assert len(result.analyzed_evidence) > 0
-    assert result.missing_evidence == ["policy_evidence"]
+    assert result.missing_evidence == []
 
 def test_get_investigation_evidence_returns_none_for_unknown_alert(
     db: Session,
