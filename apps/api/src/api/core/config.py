@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_name: str = "Financial Fraud Investigation RAG"
     environment: str = "development"
     database_url: str
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-5.6"
     gemini_api_key: str
     gemini_model: str = "gemini-2.5-flash"
 

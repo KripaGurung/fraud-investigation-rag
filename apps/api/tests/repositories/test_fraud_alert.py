@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from api.repositories.fraud_alert import (
     get_customer_transaction_history,
     get_fraud_alert,
+    list_fraud_alerts,
 )
 
 
@@ -61,3 +62,12 @@ def test_customer_transaction_history_excludes_alerted_transaction(
         transaction.id != alert.transaction.id
         for transaction in history
     )
+
+def test_list_fraud_alerts(db: Session) -> None:
+    alerts = list_fraud_alerts(db)
+
+    assert len(alerts) >= 1
+    assert any(
+        alert.alert_reference == "ALERT-001"
+        for alert in alerts
+    )    
